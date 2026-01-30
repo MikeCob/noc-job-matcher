@@ -81,12 +81,15 @@ def highlight_matches(text, keywords):
     if not text or not keywords:
         return html.escape(str(text)) if text else ""
     
-    # Avoid double-highlighting by checking if text already contains HTML tags
-    if '<mark' in text or 'background-color' in text:
-        return text
+    text_str = str(text)
+    
+    # Avoid double-highlighting - check for both raw and escaped HTML markers
+    if ('<mark' in text_str or 'background-color' in text_str or 
+        '&lt;mark' in text_str or 'background-color:' in text_str):
+        return text_str
     
     # First, HTML-escape the entire text to prevent HTML injection
-    escaped_text = html.escape(str(text))
+    escaped_text = html.escape(text_str)
     
     # Then apply highlighting to keywords (creating safe HTML marks)
     highlighted = escaped_text
