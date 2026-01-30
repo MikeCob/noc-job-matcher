@@ -252,27 +252,133 @@ def main():
         st.warning("⏳ First-time setup: Generating AI embeddings... This will take 5-7 minutes.")
         st.info("The app will automatically reload when ready. Please wait...")
         
-        with st.spinner("🔄 Loading NOC data and generating embeddings..."):
-            try:
-                # Run the preparation script
-                import subprocess
-                result = subprocess.run(['python', 'prepare_embeddings.py'], 
-                                      capture_output=True, 
-                                      text=True,
-                                      timeout=600)  # 10 minute timeout
-                
-                if result.returncode == 0:
-                    st.success("✅ Embeddings generated successfully! Reloading app...")
-                    st.rerun()
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        try:
+            # Import preparation functions
+            status_text.text("Loading NOC data...")
+            progress_bar.progress(10)
+            
+            df = pd.read_csv('noc_data_full.csv')
+            
+            # Parse list fields
+            def parse_list_field(x):
+                if pd.isna(x) or x == '' or x == 'nan':
+                    return []
+                x_str = str(x).strip()
+                if x_str.startswith('['):
+                    try:
+                        return eval(x_str)
+                    except:
+                        return []
+                elif '|' in x_str:
+                    return [item.strip() for item in x_str.split('|') if item.strip()]
                 else:
-                    st.error(f"❌ Error generating embeddings: {result.stderr}")
-                    st.stop()
-            except subprocess.TimeoutExpired:
-                st.error("❌ Embedding generation timed out. Please try reloading the app.")
-                st.stop()
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
-                st.stop()
+                    return []
+            
+            df['main_duties_list'] = df['main_duties'].apply(parse_list_field)
+            df['example_titles_list'] = df['example_titles'].apply(parse_list_field)
+            df['exclusions_list'] = df['exclusions'].apply(parse_list_field)
+            
+            progress_bar.progress(20)
+            status_text.text("Creating searchable text...")
+            
+            # Create searchable text
+            def create_searchable_text(row):
+                parts = []
+                parts.append(f"Title: {row['title']} {row['title']}")
+                parts.append(f"Description: {row['description']}")
+                parts.append(row['description'][:200])
+                
+                if row['main_duties_list']:
+                    main_duties_text = " ".join(row['main_duties_list'])
+                    parts.append(f"Main duties: {main_duties_text}")
+                    parts.append(f"Responsibilities: {main_duties_text}")
+                    parts.append(f"Key duties: {main_duties_text}")
+                
+                if row['example_titles_list']:
+                    parts.append("Example titles: " + " ".join(row['example_titles_list']))
+                
+                if pd.notna(row['employment_requirements']) and row['employment_requirements']:
+                    parts.append(f"Requirements: {row['employment_requirements']}")
+                
+                if pd.notna(row['additional_information']) and row['additional_information']:
+                    parts.append(str(row['additional_information'])[:100])
+                
+                if row['exclusions_list']:
+                    parts.append("Exclusions: " + " ".join(row['exclusions_list'][:3]))
+                
+                if pd.notna(row['broad_category']) and row['broad_category']:
+                    parts.append(f"Category: {row['broad_category']}")
+                if pd.notna(row['major_group']) and row['major_group']:
+                    parts.append(f"Group: {row['major_group']}")
+                
+                return " ".join(filter(None, parts))
+            
+            df['searchable_text'] = df.apply(create_searchable_text, axis=1)
+            
+            progress_bar.progress(30)
+            status_text.text("Loading AI model (this may take a minute)...")
+            
+            model = SentenceTransformer('all-mpnet-base-v2')
+            
+            progress_bar.progress(40)
+            status_text.text(f"Generating profile embeddings for {len(df)} NOC codes...")
+            
+            embeddings = model.encode(df['searchable_text'].tolist(), batch_size=32, show_progress_bar=False)
+            
+            progress_bar.progress(60)
+            status_text.text("Generating duty-level embeddings...")
+            
+            all_duties = []
+            duty_to_noc_map = []
+            
+            for idx, row in df.iterrows():
+                if row['main_duties_list']:
+                    for duty in row['main_duties_list']:
+                        if duty and duty.strip():
+                            all_duties.append(duty)
+                            duty_to_noc_map.append(idx)
+            
+            duty_embeddings = model.encode(all_duties, batch_size=32, show_progress_bar=False)
+            
+            progress_bar.progress(80)
+            status_text.text("Saving embeddings...")
+            
+            np.save('noc_embeddings.npy', embeddings)
+            np.save('duty_embeddings.npy', duty_embeddings)
+            
+            metadata = {
+                'noc_codes': df['noc_code'].tolist(),
+                'titles': df['title'].tolist(),
+                'descriptions': df['description'].tolist(),
+                'main_duties': df['main_duties_list'].tolist(),
+                'example_titles': df['example_titles_list'].tolist(),
+                'employment_requirements': df['employment_requirements'].tolist(),
+                'additional_information': df['additional_information'].tolist(),
+                'exclusions': df['exclusions_list'].tolist(),
+                'urls': df['url'].tolist(),
+                'searchable_texts': df['searchable_text'].tolist(),
+                'all_duties': all_duties,
+                'duty_to_noc_map': duty_to_noc_map
+            }
+            
+            with open('noc_metadata.pkl', 'wb') as f:
+                pickle.dump(metadata, f)
+            
+            progress_bar.progress(100)
+            status_text.text("✅ Embeddings generated successfully!")
+            
+            st.success(f"Generated {len(embeddings)} profile embeddings and {len(duty_embeddings)} duty embeddings!")
+            st.info("Reloading app...")
+            st.rerun()
+            
+        except Exception as e:
+            st.error(f"❌ Error generating embeddings: {str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
+            st.stop()
     
     # Sidebar
     with st.sidebar:
