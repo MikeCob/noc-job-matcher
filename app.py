@@ -246,6 +246,34 @@ def main():
     st.markdown("### Find the best National Occupational Classification (NOC) codes for any job description")
     st.markdown("---")
     
+    # Check if embeddings exist, if not generate them
+    import os
+    if not os.path.exists('noc_embeddings.npy') or not os.path.exists('duty_embeddings.npy'):
+        st.warning("⏳ First-time setup: Generating AI embeddings... This will take 5-7 minutes.")
+        st.info("The app will automatically reload when ready. Please wait...")
+        
+        with st.spinner("🔄 Loading NOC data and generating embeddings..."):
+            try:
+                # Run the preparation script
+                import subprocess
+                result = subprocess.run(['python', 'prepare_embeddings.py'], 
+                                      capture_output=True, 
+                                      text=True,
+                                      timeout=600)  # 10 minute timeout
+                
+                if result.returncode == 0:
+                    st.success("✅ Embeddings generated successfully! Reloading app...")
+                    st.rerun()
+                else:
+                    st.error(f"❌ Error generating embeddings: {result.stderr}")
+                    st.stop()
+            except subprocess.TimeoutExpired:
+                st.error("❌ Embedding generation timed out. Please try reloading the app.")
+                st.stop()
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
+                st.stop()
+    
     # Sidebar
     with st.sidebar:
         st.header("⚙️ Settings")
@@ -272,18 +300,20 @@ def main():
             model = load_model()
             embeddings, duty_embeddings, metadata = load_noc_data()
         
-        st.success(f"✅ Loaded {len(metadata['noc_codes'])} NOC codes")
+        st.success(f"✅ Loaded {len(metadata['noc_codes'])} NOC codes with {len(metadata['all_duties'])} individual duties")
         
-    except FileNotFoundError:
-        st.error("""
+    except FileNotFoundError as e:
+        st.error(f"""
         ❌ **Embeddings not found!**
         
-        Please run the preparation script first:
-        ```
-        python prepare_embeddings.py
-        ```
+        The app needs to generate embeddings first. Please refresh the page.
+        
+        Error details: {str(e)}
         """)
-        return
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Error loading data: {str(e)}")
+        st.stop()
     
     # Main content area
     col1, col2 = st.columns([3, 2])
