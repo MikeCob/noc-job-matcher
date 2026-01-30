@@ -569,26 +569,23 @@ def main():
                     if result['main_duties'] and len(result['main_duties']) > 0:
                         for duty in result['main_duties']:
                             if duty and duty.strip():
-                                highlighted_duty = highlight_matches(duty, result['keywords'])
-                                st.markdown(f"• {highlighted_duty}", unsafe_allow_html=True)
+                                st.markdown(f"• {duty}")
                     else:
                         st.info("No detailed duties available")
                 
                 # Example Titles
-                with st.expander("💼 View Example Job Titles (with highlights)"):
+                with st.expander("💼 View Example Job Titles"):
                     if result['example_titles'] and len(result['example_titles']) > 0:
                         for title in result['example_titles']:
                             if title and title.strip():
-                                highlighted_title = highlight_matches(title, result['keywords'])
-                                st.markdown(f"• {highlighted_title}", unsafe_allow_html=True)
+                                st.markdown(f"• {title}")
                     else:
                         st.info("No example titles available")
                 
                 # Employment Requirements
                 if result['employment_requirements'] and str(result['employment_requirements']).strip() and str(result['employment_requirements']) != 'nan':
-                    with st.expander("📚 Employment Requirements (with highlights)"):
-                        highlighted_req = highlight_matches(str(result['employment_requirements']), result['keywords'])
-                        st.markdown(highlighted_req, unsafe_allow_html=True)
+                    with st.expander("📚 Employment Requirements"):
+                        st.markdown(str(result['employment_requirements']))
                 
                 st.markdown(f"🔗 [View Full NOC Profile]({result['url']})")
                 st.markdown("---")
