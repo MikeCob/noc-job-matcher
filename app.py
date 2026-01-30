@@ -535,11 +535,14 @@ def main():
                             else:
                                 badge_color = "#ff9800"
                             
+                            # Highlight keywords first
+                            highlighted_duty = highlight_matches(match['duty'], result['keywords'])
+                            
                             st.markdown(f"""
                             <div style="background-color: #f8f9fa; padding: 0.75rem; border-radius: 5px; margin-bottom: 0.5rem; border-left: 3px solid {badge_color};">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div style="flex: 1;">
-                                        <strong>NOC Duty:</strong> {highlight_matches(match['duty'], result['keywords'])}<br>
+                                        <strong>NOC Duty:</strong> {highlighted_duty}<br>
                                         <small style="color: #666;">Matches: {match['matched_responsibility'][:100]}...</small>
                                     </div>
                                     <span style="background-color: {badge_color}; color: white; padding: 0.25rem 0.5rem; border-radius: 3px; margin-left: 0.5rem; font-size: 0.85rem;">
