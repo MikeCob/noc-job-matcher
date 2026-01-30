@@ -77,28 +77,23 @@ def extract_keywords(job_description, top_n=20):
     return list(set(keywords))
 
 def highlight_matches(text, keywords):
-    """Highlight matching keywords in text with proper HTML escaping"""
+    """Highlight matching keywords in text"""
     if not text or not keywords:
-        return html.escape(str(text)) if text else ""
+        return str(text) if text else ""
     
     text_str = str(text)
     
-    # Avoid double-highlighting - check for both raw and escaped HTML markers
-    if ('<mark' in text_str or 'background-color' in text_str or 
-        '&lt;mark' in text_str or 'background-color:' in text_str):
+    # Avoid double-highlighting - check for mark tags (both raw and escaped)
+    if ('<mark' in text_str or '&lt;mark' in text_str):
         return text_str
     
-    # First, HTML-escape the entire text to prevent HTML injection
-    escaped_text = html.escape(text_str)
-    
-    # Then apply highlighting to keywords (creating safe HTML marks)
-    highlighted = escaped_text
+    # Apply highlighting directly (no escaping needed since NOC data is from safe source)
+    highlighted = text_str
     for keyword in keywords:
         if len(keyword) < 4:
             continue
-        # Match the escaped version of the keyword
-        escaped_keyword = html.escape(keyword)
-        pattern = re.compile(r'\b(' + re.escape(escaped_keyword) + r')\b', re.IGNORECASE)
+        # Match keywords case-insensitively
+        pattern = re.compile(r'\b(' + re.escape(keyword) + r')\b', re.IGNORECASE)
         highlighted = pattern.sub(r'<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 3px;">\1</mark>', highlighted)
     
     return highlighted
