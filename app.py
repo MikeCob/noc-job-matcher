@@ -546,15 +546,16 @@ def main():
                             else:
                                 badge_color = "#ff9800"
                             
-                            # Don't highlight in the complex HTML template - just show plain text
+                            # Escape text for safe HTML display
                             duty_text = html.escape(match['duty'])
+                            resp_text = html.escape(match['matched_responsibility'])
                             
                             st.markdown(f"""
                             <div style="background-color: #f8f9fa; padding: 0.75rem; border-radius: 5px; margin-bottom: 0.5rem; border-left: 3px solid {badge_color};">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div style="flex: 1;">
                                         <strong>NOC Duty:</strong> {duty_text}<br>
-                                        <small style="color: #666;">Matches: {html.escape(match['matched_responsibility'][:100])}...</small>
+                                        <small style="color: #666;">Matches: {resp_text}</small>
                                     </div>
                                     <span style="background-color: {badge_color}; color: white; padding: 0.25rem 0.5rem; border-radius: 3px; margin-left: 0.5rem; font-size: 0.85rem;">
                                         {match_pct:.0f}%
