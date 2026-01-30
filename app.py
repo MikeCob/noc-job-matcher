@@ -79,10 +79,16 @@ def highlight_matches(text, keywords):
     """Highlight matching keywords in text"""
     if not text or not keywords:
         return text
+    
+    # Avoid double-highlighting by checking if text already contains HTML tags
+    if '<mark' in text or 'background-color' in text:
+        return text
+    
     highlighted = text
     for keyword in keywords:
         if len(keyword) < 4:
             continue
+        # Only match keywords that are not inside HTML tags
         pattern = re.compile(r'\b(' + re.escape(keyword) + r')\b', re.IGNORECASE)
         highlighted = pattern.sub(r'<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 3px;">\1</mark>', highlighted)
     return highlighted
