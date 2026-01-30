@@ -29,11 +29,6 @@ env/
 # Streamlit
 .streamlit/secrets.toml
 
-# Large model files (will regenerate on deployment)
-noc_embeddings.npy
-duty_embeddings.npy
-noc_metadata.pkl
-
 # IDE
 .vscode/
 .idea/
