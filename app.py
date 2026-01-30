@@ -11,6 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import re
 from collections import defaultdict
+import html
 
 # Page configuration
 st.set_page_config(
@@ -76,21 +77,27 @@ def extract_keywords(job_description, top_n=20):
     return list(set(keywords))
 
 def highlight_matches(text, keywords):
-    """Highlight matching keywords in text"""
+    """Highlight matching keywords in text with proper HTML escaping"""
     if not text or not keywords:
-        return text
+        return html.escape(str(text)) if text else ""
     
     # Avoid double-highlighting by checking if text already contains HTML tags
     if '<mark' in text or 'background-color' in text:
         return text
     
-    highlighted = text
+    # First, HTML-escape the entire text to prevent HTML injection
+    escaped_text = html.escape(str(text))
+    
+    # Then apply highlighting to keywords (creating safe HTML marks)
+    highlighted = escaped_text
     for keyword in keywords:
         if len(keyword) < 4:
             continue
-        # Only match keywords that are not inside HTML tags
-        pattern = re.compile(r'\b(' + re.escape(keyword) + r')\b', re.IGNORECASE)
+        # Match the escaped version of the keyword
+        escaped_keyword = html.escape(keyword)
+        pattern = re.compile(r'\b(' + re.escape(escaped_keyword) + r')\b', re.IGNORECASE)
         highlighted = pattern.sub(r'<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 3px;">\1</mark>', highlighted)
+    
     return highlighted
 
 def extract_responsibilities(job_description):
