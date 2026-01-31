@@ -309,17 +309,34 @@ class NOCScraper:
             
             # Extract Index of Titles (if available)
             try:
-                # Look for the "Index of Titles" button/link and click it
-                index_button = profile_page.locator('button:has-text("Index of Titles"), a:has-text("Index of Titles"), [data-toggle="collapse"]:has-text("Index of Titles")').first
-                if index_button.count() > 0:
-                    index_button.click()
-                    time.sleep(0.5)  # Wait for expansion
+                # Look for the "Index of titles" button/link - it's usually a clickable element near "Example titles"
+                # Try multiple possible selectors
+                index_trigger = profile_page.locator('text="Index of titles"').first
+                
+                if index_trigger.count() > 0:
+                    # Click to expand the full index
+                    index_trigger.click()
+                    time.sleep(1)  # Wait for expansion animation
                     
-                    # Extract all titles from the expanded section
-                    index_elements = profile_page.locator('h4:has-text("Index of Titles") ~ ul li, h4:has-text("Index of Titles") ~ div li, #indexOfTitles li, .index-of-titles li').all()
-                    profile_data['index_of_titles'] = [elem.inner_text().strip() for elem in index_elements if elem.is_visible()]
-            except:
-                pass
+                    # After clicking, try to get all visible list items under Example titles section
+                    # The full list should now be visible
+                    all_title_elements = profile_page.locator('h4:has-text("Example titles") ~ ul li, h4:has-text("Example titles") ~ div li, h4:has-text("Example titles") + * li').all()
+                    all_titles = [elem.inner_text().strip() for elem in all_title_elements if elem.is_visible() and elem.inner_text().strip()]
+                    
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    unique_titles = []
+                    for title in all_titles:
+                        if title not in seen and title:
+                            seen.add(title)
+                            unique_titles.append(title)
+                    
+                    profile_data['index_of_titles'] = unique_titles
+                else:
+                    # If no index button found, index_of_titles will be empty
+                    profile_data['index_of_titles'] = []
+            except Exception as e:
+                profile_data['index_of_titles'] = []
             
             # Extract Main Duties
             try:
