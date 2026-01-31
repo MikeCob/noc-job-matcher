@@ -280,6 +280,7 @@ class NOCScraper:
         """Extract detailed profile information from a NOC profile page"""
         profile_data = {
             'example_titles': [],
+            'index_of_titles': [],
             'main_duties': [],
             'employment_requirements': '',
             'additional_information': '',
@@ -303,6 +304,20 @@ class NOCScraper:
             try:
                 title_elements = profile_page.locator('h4:has-text("Example titles") ~ ul li, h4:has-text("Example titles") ~ div li').all()
                 profile_data['example_titles'] = [elem.inner_text().strip() for elem in title_elements if elem.is_visible()]
+            except:
+                pass
+            
+            # Extract Index of Titles (if available)
+            try:
+                # Look for the "Index of Titles" button/link and click it
+                index_button = profile_page.locator('button:has-text("Index of Titles"), a:has-text("Index of Titles"), [data-toggle="collapse"]:has-text("Index of Titles")').first
+                if index_button.count() > 0:
+                    index_button.click()
+                    time.sleep(0.5)  # Wait for expansion
+                    
+                    # Extract all titles from the expanded section
+                    index_elements = profile_page.locator('h4:has-text("Index of Titles") ~ ul li, h4:has-text("Index of Titles") ~ div li, #indexOfTitles li, .index-of-titles li').all()
+                    profile_data['index_of_titles'] = [elem.inner_text().strip() for elem in index_elements if elem.is_visible()]
             except:
                 pass
             
@@ -425,7 +440,7 @@ class NOCScraper:
         for item in self.noc_data:
             row = item.copy()
             # Convert list fields to pipe-separated strings
-            for key in ['example_titles', 'main_duties', 'exclusions']:
+            for key in ['example_titles', 'index_of_titles', 'main_duties', 'exclusions']:
                 if key in row and isinstance(row[key], list):
                     row[key] = ' | '.join(row[key])
             data_for_csv.append(row)
