@@ -393,20 +393,12 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.header("⚙️ Settings")
-        top_k = st.slider("Number of results to show", min_value=1, max_value=20, value=10)
-        st.markdown("---")
-        st.header("ℹ️ About")
+        st.header("ℹ️ How to Use")
         st.markdown("""
-        This app uses **advanced semantic matching** with:
-        - 🧠 **MPNet AI model** for understanding context
-        - 🎯 **Duty-by-duty comparison** for precision
-        - 📊 **Hybrid scoring** (40% overall + 60% specific duties)
-        
-        **How to use:**
         1. Paste or type a job description
-        2. Click "Find Matching NOCs"
-        3. Review matches with duty-level scores
+        2. Adjust number of results if needed
+        3. Click "Find Matching NOCs"
+        4. Review matches with duty-level scores
         
         **Data:** NOC 2021 Version 1.0 (516 Unit Groups)
         """)
@@ -433,49 +425,21 @@ def main():
         st.stop()
     
     # Main content area
-    col1, col2 = st.columns([3, 2])
+    st.header("📝 Job Description Input")
+    job_description = st.text_area(
+        "Paste the job description here:",
+        height=300,
+        placeholder="Example: We are looking for a Senior Software Engineer to design and develop web applications. "
+                   "Responsibilities include writing clean code, reviewing pull requests, mentoring junior developers, "
+                   "and collaborating with product teams to deliver high-quality software solutions..."
+    )
     
+    # Settings and button in same row
+    col1, col2 = st.columns([2, 1])
     with col1:
-        st.header("📝 Job Description Input")
-        job_description = st.text_area(
-            "Paste the job description here:",
-            height=300,
-            placeholder="Example: We are looking for a Senior Software Engineer to design and develop web applications. "
-                       "Responsibilities include writing clean code, reviewing pull requests, mentoring junior developers, "
-                       "and collaborating with product teams to deliver high-quality software solutions..."
-        )
-        
         search_button = st.button("🔍 Find Matching NOCs", type="primary")
-    
     with col2:
-        st.header("💡 Sample Job Descriptions")
-        
-        samples = {
-            "Software Developer": """We are seeking a talented Software Developer to join our team. 
-            Responsibilities: Design and develop software applications, write clean and efficient code, 
-            perform code reviews, debug and fix software defects, collaborate with cross-functional teams, 
-            participate in agile development processes, and maintain technical documentation.""",
-            
-            "Registered Nurse": """Looking for a compassionate Registered Nurse. Duties include: 
-            Assess patient conditions, administer medications and treatments, monitor patient vital signs, 
-            collaborate with physicians and healthcare team, maintain patient records, provide patient education, 
-            ensure patient safety and comfort, follow infection control protocols.""",
-            
-            "Marketing Manager": """Seeking an experienced Marketing Manager. Responsibilities: 
-            Develop and implement marketing strategies, manage marketing campaigns, analyze market trends, 
-            oversee social media presence, manage marketing budget, coordinate with sales teams, 
-            monitor campaign performance, conduct market research, and supervise marketing staff."""
-        }
-        
-        for job_title, sample_desc in samples.items():
-            if st.button(f"📋 {job_title}"):
-                st.session_state['job_description'] = sample_desc
-                st.rerun()
-    
-    # Use sample if selected
-    if 'job_description' in st.session_state:
-        job_description = st.session_state['job_description']
-        del st.session_state['job_description']
+        top_k = st.slider("Number of results", min_value=1, max_value=20, value=10)
     
     # Search functionality
     if search_button and job_description.strip():
